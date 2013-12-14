@@ -3,8 +3,6 @@ require 'chronic/handlers'
 
 module Chronic
   class Parser
-    include Handlers
-
     # Hash of default configuration options.
     DEFAULT_OPTIONS = {
       :context => :future,
@@ -148,9 +146,6 @@ module Chronic
     # options - An optional Hash of configuration options.
     #
     # Returns a Hash of Handler definitions.
-    def definitions(options = {})
-      SpanDictionary.new(options).definitions
-    end
 
     private
 
@@ -164,8 +159,26 @@ module Chronic
     end
 
     def tokens_to_span(tokens, options)
-      definitions = definitions(options)
+      SpanParser.new(now, options).convert(tokens)
+    end
+  end
 
+  class SpanParser
+    include Handlers
+
+    attr_reader :options
+    attr_accessor :now
+
+    def initialize(now, options)
+      @options = options
+      @now = now
+    end
+
+    def definitions
+      SpanDictionary.new(options).definitions
+    end
+
+    def convert(tokens)
       (definitions[:endian] + definitions[:date]).each do |handler|
         if handler.match(tokens, definitions)
           good_tokens = tokens.select { |o| !o.get_tag Separator }
@@ -198,3 +211,4 @@ module Chronic
     end
   end
 end
+
